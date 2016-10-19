@@ -1,4 +1,4 @@
-/* pratica06.sql: Métodos de Acesso I
+/* pratica07.sql: Métodos de Acesso I
  * Copyright (C) 2016 Daniela Petruzalek
  *
  * This program is free software: you can redistribute it and/or modify
