@@ -1,4 +1,4 @@
-/* pratica12b.sql: Estatísticas
+/* pratica12b.sql: Estatísticas II
  * Copyright (C) 2016 Daniela Petruzalek
  *
  * This program is free software: you can redistribute it and/or modify
@@ -15,90 +15,108 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-SELECT DBMS_STATS.get_prefs('GLOBAL_TEMP_TABLE_STATS') FROM dual;
+-- Verifica a preferência global de tabela temporária
+select dbms_stats.get_prefs('GLOBAL_TEMP_TABLE_STATS') from dual;
 
-BEGIN
-  DBMS_STATS.set_global_prefs (
+-- Configura como estatística compartilhada
+begin
+  dbms_stats.set_global_prefs (
     pname   => 'GLOBAL_TEMP_TABLE_STATS',
     pvalue  => 'SHARED');
-END;
+end;
 /
 
-BEGIN
-  DBMS_STATS.set_global_prefs (
+-- Configura como estatística por sessão
+begin
+  dbms_stats.set_global_prefs (
     pname   => 'GLOBAL_TEMP_TABLE_STATS',
     pvalue  => 'SESSION');
-END;
+end;
 /
 
-DROP TABLE gtt1;
+truncate table gtt1;
+drop table gtt1;
+create global temporary table gtt1 (
+  id number,
+  description varchar2(20)
+) on commit PRESERVE rows;
 
-CREATE GLOBAL TEMPORARY TABLE gtt1 (
-  id NUMBER,
-  description VARCHAR2(20)
-)
-ON COMMIT PRESERVE ROWS;
 
-
--- Set the GTT statistics to SHARED.
-BEGIN
-  DBMS_STATS.set_global_prefs (
+-- Configura estatísticas de GTT como compartilhadas
+begin
+  dbms_stats.set_global_prefs (
     pname   => 'GLOBAL_TEMP_TABLE_STATS',
     pvalue  => 'SHARED');
-END;
+end;
 /
 
--- Insert some data and gather the shared statistics.
-INSERT INTO test.gtt1
-SELECT level, 'description'
-FROM   dual
-CONNECT BY level <= 5;
+-- Insere alguns dados e coleta estatísticas
+insert into gtt1
+select level, 'description'
+from   dual
+connect by level <= 100;
 
-EXEC DBMS_STATS.gather_table_stats('CURSO','GTT1');
+exec dbms_stats.gather_table_stats('CURSO','GTT1');
+
+-- O count abaixo vai depender do tipo da GTT1:
+-- on commit delete rows   = 0
+-- on commit preserve rows = 100
+select count(*) from gtt1;
+
+-- Existe um commit implicito no dbms_stats quando o GLOBAL_TEMP_TABLE_STATS é
+-- configurado como SHARED
 
 -- Display the statistics information and scope.
-COLUMN table_name FORMAT A20
+column table_name format a20
 
-SELECT table_name, num_rows, scope
-FROM   dba_tab_statistics
-WHERE  owner = 'CURSO'
-AND    table_name = 'GTT1';
+select table_name, num_rows, scope
+from   dba_tab_statistics
+where  owner = user
+and    table_name = 'GTT1';
 
 -- Reset the GTT statistics preference to SESSION.
-BEGIN
-  DBMS_STATS.set_global_prefs (
+begin
+  dbms_stats.set_global_prefs (
     pname   => 'GLOBAL_TEMP_TABLE_STATS',
     pvalue  => 'SESSION');
-END;
+end;
 /
 
-INSERT INTO gtt1
-SELECT level, 'description'
-FROM   dual
-CONNECT BY level <= 1000;
-COMMIT;
+insert into gtt1
+select level, 'description'
+from   dual
+connect by level <= 1000;
+commit;
 
-EXEC DBMS_STATS.gather_table_stats('CURSO','GTT1');
+exec dbms_stats.gather_table_stats(user,'GTT1');
 
--- Display the statistics information and scope.
-COLUMN table_name FORMAT A20
+-- O count abaixo vai depender do tipo da GTT1:
+-- on commit delete rows   = 1000
+-- on commit preserve rows = 1100
+select count(*) from gtt1;
 
-SELECT table_name, num_rows, scope
-FROM   dba_tab_statistics
-WHERE  owner = 'CURSO'
-AND    table_name = 'GTT1';
+-- Existe um commit implicito no dbms_stats quando o GLOBAL_TEMP_TABLE_STATS é
+-- configurado como SHARED
+
+-- Exibe estatísticas e informação de escopo
+column table_name format a20
+
+select table_name, num_rows, scope
+from   dba_tab_statistics
+where  owner = user
+and    table_name = 'GTT1';
 
 ---------------------------------------------
 -- Fazer a consulta abaixo em outra sessão --
 ---------------------------------------------
 
--- Display the statistics information and scope.
-COLUMN table_name FORMAT A20
+-- Exibe estatísticas e informação de escopo
+column table_name format a20
 
-SELECT table_name, num_rows, scope
-FROM   dba_tab_statistics
-WHERE  owner = 'CURSO'
-AND    table_name = 'GTT1';
+select table_name, num_rows, scope
+from   dba_tab_statistics
+where  owner = user
+and    table_name = 'GTT1';
 
 -- Referência
 -- https://oracle-base.com/articles/12c/session-private-statistics-for-global-temporary-tables-12cr1
