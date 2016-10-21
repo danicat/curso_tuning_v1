@@ -120,7 +120,7 @@ alter procedure calcula_fatorial compile plsql_code_type=interpreted;
 --  30000 - 15995 hsecs
 --  50000 - 49023 hsecs
 begin
-  calcula_fatorial(30000);
+  calcula_fatorial(10000);
 end;
 /
 
@@ -132,9 +132,28 @@ alter procedure calcula_fatorial compile plsql_code_type=native;
 --  30000 -  9434 hsecs
 --  50000 - 27832 hsecs
 begin
-  calcula_fatorial(30000);
+  calcula_fatorial(10000);
 end;
 /
+
+-- O plsql_optimize_level é o parâmetro que define qual é o nível de
+-- otimização que o compilador do PLSQL vai aplicar no código fonte
+--
+-- O nível padrão é o nível 2. No nível 3, ele tenta transformar chamadas
+-- de função em função inline. Como o fatorial é uma função recursiva, ele
+-- pode se beneficiar desta técnica de otimização.
+alter function  fatorial         compile plsql_code_type=native plsql_optimize_level=3;
+alter procedure calcula_fatorial compile plsql_code_type=native plsql_optimize_level=3;
+
+-- Tempo esperado:
+--  10000 -   789 hsecs
+--  30000 -  9434 hsecs
+--  50000 - 27832 hsecs
+begin
+  calcula_fatorial(10000);
+end;
+/
+
 
 -------------------------------
 -- CENÁRIO 2: NÚMEROS PRIMOS --
@@ -196,7 +215,7 @@ end;
 --  5.000.000 - 16110 hsecs
 -- 10.000.000 - 43384 hsecs
 begin
-  calcula_primos(5000000);
+  calcula_primos(100000);
 end;
 /
 
@@ -289,6 +308,7 @@ begin
   testa_numeros_inteiros(50000000);
 end;
 /
+set serveroutput on
 
 -- Agora como nativa
 alter procedure testa_numeros_inteiros compile plsql_code_type=native;
