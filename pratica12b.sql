@@ -71,7 +71,7 @@ column table_name format a20
 
 select table_name, num_rows, scope
 from   dba_tab_statistics
-where  owner = user
+where  owner = 'CURSO'
 and    table_name = 'GTT1';
 
 -- Reset the GTT statistics preference to SESSION.
@@ -103,7 +103,7 @@ column table_name format a20
 
 select table_name, num_rows, scope
 from   dba_tab_statistics
-where  owner = user
+where  owner = 'CURSO'
 and    table_name = 'GTT1';
 
 ---------------------------------------------
@@ -115,7 +115,7 @@ column table_name format a20
 
 select table_name, num_rows, scope
 from   dba_tab_statistics
-where  owner = user
+where  owner = 'CURSO'
 and    table_name = 'GTT1';
 
 -- Referência
